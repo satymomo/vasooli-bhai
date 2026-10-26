@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vasooli Bhai</title>
+<style>
+  :root {
+    --bg: #fbf5ea; --card: #fffdf8; --ink: #1f1a14; --muted: #6f655a; --line: #eadfcd;
+    --orange: #e8630a; --orange-soft: #fde6d3; --green: #1f7a4d; --green-soft: #dcf1e5;
+    --amber: #a45c00; --amber-soft: #fbecc8; --red: #b3261e; --red-soft: #f9dedb;
+    --grey-soft: #ece7df;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 28px 16px 40px; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 40px; letter-spacing: -0.02em; line-height: 1.05; }
+  h1 span { color: var(--orange); }
+  .sub { margin: 6px 0 0; color: var(--muted); font-size: 17px; }
+  .mode { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
+  .mode.live { color: var(--green); border-color: #b9e0c9; }
+  .mode.demo { color: var(--amber); border-color: #efd6a0; background: var(--amber-soft); }
+  .banner { margin-top: 16px; padding: 10px 14px; border-radius: 10px; background: var(--amber-soft); color: #5d3a00; font-size: 13px; display: none; }
+  .banner button { margin-left: 8px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; margin-top: 22px; }
+  .grid > * { min-width: 0; }
+  @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } h1 { font-size: 32px; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .panel h2 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .talk { background: var(--orange); color: #fff; border: 0; border-radius: 999px; padding: 14px 24px;
+    font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 18px rgba(232,99,10,.28); }
+  .talk:hover { filter: brightness(1.05); }
+  .talk:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); border-radius: 999px;
+    padding: 8px 14px; font-size: 13px; cursor: pointer; }
+  button.ghost:hover { border-color: var(--orange); }
+  .status { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--muted); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #c9bfb2; }
+  .status.listening .dot { background: var(--green); animation: pulse 1s infinite; }
+  .status.thinking .dot { background: var(--amber); animation: pulse .6s infinite; }
+  .status.speaking .dot { background: var(--orange); animation: pulse .8s infinite; }
+  .status.listening { color: var(--green); } .status.thinking { color: var(--amber); } .status.speaking { color: var(--orange); }
+  @keyframes pulse { 50% { transform: scale(1.6); opacity: .5; } }
+  .bars { display: inline-flex; gap: 3px; height: 16px; align-items: end; }
+  .bars i { width: 3px; background: currentColor; border-radius: 2px; height: 4px; }
+  .speaking .bars i, .listening .bars i { animation: bar .9s infinite ease-in-out; }
+  .bars i:nth-child(2) { animation-delay: .15s !important; } .bars i:nth-child(3) { animation-delay: .3s !important; } .bars i:nth-child(4) { animation-delay: .45s !important; }
+  @keyframes bar { 50% { height: 16px; } }
+  .transcript { margin-top: 16px; height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; }
+  .msg small { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
+  .msg.agent { background: var(--orange-soft); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.client { background: var(--grey-soft); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg.error { background: var(--red-soft); color: var(--red); align-self: center; font-size: 13px; }
+  .empty { color: var(--muted); margin: auto; text-align: center; }
+  form { display: flex; gap: 8px; margin-top: 12px; }
+  input[type=text] { flex: 1; min-width: 0; padding: 11px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font: inherit; color: var(--ink); }
+  input[type=text]:focus { outline: 2px solid var(--orange-soft); border-color: var(--orange); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .chips button { font-size: 12px; padding: 6px 10px; }
+  .invoice .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .demo-tag { font-size: 11px; font-weight: 700; color: var(--amber); background: var(--amber-soft); padding: 3px 8px; border-radius: 6px; }
+  .amount { font-size: 34px; font-weight: 800; margin: 8px 0 2px; letter-spacing: -0.02em; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .badge { display: inline-block; margin-top: 12px; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; transition: all .3s; }
+  .badge.Overdue { background: var(--red-soft); color: var(--red); }
+  .badge.Payment-promised { background: var(--green-soft); color: var(--green); }
+  .badge.Verification-needed, .badge.Proposal-pending { background: var(--amber-soft); color: var(--amber); }
+  .badge.Disputed { background: var(--red-soft); color: var(--red); }
+  .badge.Contact-paused { background: var(--grey-soft); color: var(--muted); }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; margin: 16px 0 0; font-size: 14px; }
+  dt { color: var(--muted); } dd { margin: 0; font-weight: 600; }
+  .flash { animation: flash 1.4s ease-out; }
+  @keyframes flash { 0% { background: var(--orange-soft); } 100% { background: transparent; } }
+  .link { word-break: break-all; font-weight: 500; font-size: 12px; }
+  .events { margin-top: 20px; }
+  .events ol { list-style: none; margin: 0; padding: 0; font-size: 12px; display: flex; flex-direction: column; gap: 6px; max-height: 210px; overflow-y: auto; }
+  .events li { padding: 8px 10px; border-radius: 8px; background: #faf6ef; border-left: 3px solid var(--green); }
+  .events li.bad { border-left-color: var(--red); }
+  .events code { font-weight: 700; }
+  .events .t { color: var(--muted); }
+  footer { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Vasooli <span>Bhai</span></h1>
+      <p class="sub">Aap kaam karo. Follow-up hum karenge.</p>
+    </div>
+    <span id="mode" class="mode">…</span>
+  </header>
+  <div id="banner" class="banner"></div>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="controls">
+        <button id="talk" class="talk">🎙️ Talk to Vasooli Bhai</button>
+        <div id="status" class="status"><span class="dot"></span><span id="statusText">Ready</span>
+          <span class="bars"><i></i><i></i><i></i><i></i></span></div>
+        <span style="flex:1"></span>
+        <button id="reset" class="ghost">↺ Reset demo</button>
+      </div>
+      <div id="transcript" class="transcript"><p class="empty">Press “Talk to Vasooli Bhai” to start the call.<br>You play Rahul, the client.</p></div>
+      <form id="form">
+        <input id="text" type="text" placeholder="Type as Rahul…" autocomplete="off" disabled>
+        <button class="ghost" id="send" disabled>Send</button>
+      </form>
+      <div class="chips" id="chips">
+        <button class="ghost">Abhi nahi, Friday ko kar dunga.</button>
+        <button class="ghost">Haan, confirm.</button>
+        <button class="ghost">I already paid</button>
+        <button class="ghost">The amount is wrong</button>
+        <button class="ghost">Sorry, bhool gaya</button>
+        <button class="ghost">Abhi paise nahi hai</button>
+        <button class="ghost">Stop contacting me</button>
+      </div>
+    </section>
+
+    <aside>
+      <section class="panel invoice" id="invoice">
+        <div class="top"><strong id="invId">INV-1042</strong><span class="demo-tag">DEMO DATA</span></div>
+        <div class="amount" id="amount">₹8,000</div>
+        <div class="meta" id="work">Logo design · Aman → Rahul</div>
+        <span class="badge Overdue" id="badge">Overdue</span>
+        <dl>
+          <dt>Due date</dt><dd id="due">—</dd>
+          <dt>Promised date</dt><dd id="promised">—</dd>
+          <dt>Next reminder</dt><dd id="reminder">—</dd>
+          <dt>Next action</dt><dd id="next">—</dd>
+          <dt id="extraLabel" hidden></dt><dd id="extra" hidden></dd>
+        </dl>
+      </section>
+      <section class="panel events">
+        <h2>Agent actions <span style="text-transform:none;letter-spacing:0;font-weight:400">· local functions actually executed</span></h2>
+        <ol id="events"><li style="border-left-color:var(--line)" class="t">No actions yet.</li></ol>
+      </section>
+    </aside>
+  </div>
+  <footer>Prototype for the Sarvam AI Buildathon. All invoice data, payment links and reminders are demo-only: nothing is sent or charged.</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let S = null, keyConfigured = false, started = false, busy = false, audio = null, mic = null, rec = null, voice = false;
+const fmtDate = iso => iso ? new Date(iso + (iso.length === 10 ? "T00:00" : "")).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "—";
+const fmtTime = iso => iso ? new Date(iso).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "—";
+
+async function api(path, body, raw) {
+  const r = await fetch(path, { method: body === undefined ? "GET" : "POST",
+    headers: raw ? { "Content-Type": raw } : { "Content-Type": "application/json" },
+    body: raw ? body : body === undefined ? undefined : JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+function setStatus(kind, text) { $("status").className = "status " + kind; $("statusText").textContent = text; }
+
+function set(id, val) { const el = $(id); if (el.textContent !== val) { el.textContent = val; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); } }
+
+function render(s) {
+  S = s;
+  voice = s.mode === "live";
+  const m = $("mode");
+  m.className = "mode " + s.mode;
+  m.textContent = voice ? "● Live · Sarvam STT + LLM + TTS" : "Text demo mode · scripted agent, no Sarvam calls";
+  const b = $("banner");
+  if (!voice) {
+    b.style.display = "block";
+    b.innerHTML = keyConfigured
+      ? "Text demo mode: a scripted rule-based agent drives the same local tools. No voice, no Sarvam API calls. <button class='ghost' id='goLive'>Switch to live Sarvam</button>"
+      : "Text demo mode: no Sarvam key configured on the server. A scripted rule-based agent drives the same local tools. No voice, no Sarvam API calls.";
+    const g = $("goLive"); if (g) g.onclick = () => switchMode("live");
+  } else b.style.display = "none";
+
+  const inv = s.invoice;
+  const status = inv.status;
+  const badge = $("badge");
+  if (badge.textContent !== status) { badge.textContent = status; badge.className = "badge " + status.replace(/ /g, "-") + " flash"; }
+  set("due", `${fmtDate(inv.due_date)} · ${inv.days_overdue} days overdue`);
+  set("promised", inv.promised_date ? fmtDate(inv.promised_date) : `Missed: ${fmtDate(inv.previous_promise)}`);
+  set("reminder", inv.reminders_paused ? "Paused" : inv.next_reminder ? fmtTime(inv.next_reminder) + " (demo)" : "—");
+  set("next", inv.next_action);
+  let label = "", extra = "";
+  if (inv.dispute) { label = "Dispute"; extra = `${inv.dispute.kind}: “${inv.dispute.reason}”`; }
+  else if (inv.verification) { label = "Claimed payment"; extra = [inv.verification.reference && `Ref: ${inv.verification.reference}`, inv.verification.paid_on].filter(Boolean).join(" · ") || "Awaiting reference"; extra += " · not verified"; }
+  else if (inv.proposal) { const p = inv.proposal; label = "Proposal"; extra = (p.kind === "partial" ? `₹${p.amount.toLocaleString("en-IN")} partial` : "New date") + (p.date ? ` by ${fmtDate(p.date)}` : "") + " · needs Aman's approval"; }
+  else if (inv.payment_link) { label = "Demo pay link"; extra = inv.payment_link + " (not sent)"; }
+  $("extraLabel").hidden = $("extra").hidden = !label;
+  $("extraLabel").textContent = label; set("extra", extra);
+  $("extra").className = label === "Demo pay link" ? "link" : "";
+
+  const ev = $("events");
+  ev.innerHTML = s.events.length ? "" : '<li style="border-left-color:var(--line)" class="t">No actions yet.</li>';
+  [...s.events].reverse().forEach(e => {
+    const li = document.createElement("li");
+    li.className = e.ok ? "" : "bad";
+    li.innerHTML = `<span class="t">${e.time}</span> <code></code><div></div>`;
+    li.querySelector("code").textContent = (e.ok ? "✓ " : "✕ ") + e.tool + "()";
+    li.querySelector("div").textContent = e.summary;
+    ev.appendChild(li);
+  });
+
+  const tr = $("transcript");
+  if (s.transcript.length) {
+    tr.innerHTML = "";
+    s.transcript.forEach(t => addMsg(t.role, t.text, false));
+  }
+  $("text").disabled = $("send").disabled = !started;
+}
+
+function addMsg(role, text, scroll = true) {
+  const tr = $("transcript");
+  if (tr.querySelector(".empty")) tr.innerHTML = "";
+  const d = document.createElement("div");
+  d.className = "msg " + role;
+  d.innerHTML = `<small>${role === "agent" ? "Vasooli Bhai" : role === "client" ? "Rahul" : "Error"}</small>`;
+  d.appendChild(document.createTextNode(text));
+  tr.appendChild(d);
+  tr.scrollTop = tr.scrollHeight;
+}
+
+function showError(e) {
+  addMsg("error", "Sarvam/API error: " + (e.message || String(e)));
+  setStatus("", "Error: see transcript");
+  if (voice) {
+    const b = $("banner"); b.style.display = "block";
+    b.innerHTML = "A live Sarvam call failed (shown in the transcript). <button class='ghost' id='goDemo'>Switch to text demo mode</button>";
+    $("goDemo").onclick = () => switchMode("demo");
+  }
+}
+
+async function switchMode(mode) { stopAll(); started = false; render((await api("/api/reset", { mode })).state); resetTranscript(); }
+function resetTranscript() { $("transcript").innerHTML = '<p class="empty">Press “Talk to Vasooli Bhai” to start the call.<br>You play Rahul, the client.</p>'; $("talk").textContent = "🎙️ Talk to Vasooli Bhai"; }
+
+// ---------------- voice ----------------
+async function speak(text) {
+  if (!voice) return;
+  setStatus("thinking", "Preparing voice…");
+  const { audio: b64 } = await api("/api/tts", { text });
+  audio = new Audio("data:audio/wav;base64," + b64);
+  setStatus("speaking", "Speaking… (talk to interrupt)");
+  const done = new Promise(res => { audio.onended = res; audio.onpause = res; });
+  await audio.play();
+  bargeIn();
+  await done;
+  audio = null;
+}
+
+async function getMic() {
+  if (!mic) {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    const ctx = new AudioContext();
+    const an = ctx.createAnalyser(); an.fftSize = 1024;
+    ctx.createMediaStreamSource(stream).connect(an);
+    mic = { stream, an, buf: new Float32Array(an.fftSize) };
+  }
+  return mic;
+}
+function level() { mic.an.getFloatTimeDomainData(mic.buf); let s = 0; for (const v of mic.buf) s += v * v; return Math.sqrt(s / mic.buf.length); }
+
+function bargeIn() {
+  if (!mic) return;
+  let loud = 0;
+  const tick = () => {
+    if (!audio || audio.paused) return;
+    loud = level() > 0.06 ? loud + 1 : 0;
+    if (loud > 6) { audio.pause(); return; }   // ~300ms of speech: stop talking
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+function listen() {
+  return new Promise(async (resolve, reject) => {
+    try { await getMic(); } catch (e) { return reject(new Error("Microphone blocked: " + e.message)); }
+    const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+    rec = new MediaRecorder(mic.stream, mime ? { mimeType: mime } : {});
+    const chunks = []; let spoke = false, quietSince = performance.now(), t0 = performance.now();
+    rec.ondataavailable = e => chunks.push(e.data);
+    rec.onstop = () => { rec = null; resolve(spoke ? new Blob(chunks, { type: chunks[0]?.type || "audio/webm" }) : null); };
+    rec.start(100);
+    setStatus("listening", "Listening…");
+    const tick = () => {
+      if (!rec) return;
+      const now = performance.now(), l = level();
+      if (l > 0.025) { spoke = true; quietSince = now; }
+      if ((spoke && now - quietSince > 1100) || (!spoke && now - t0 > 8000) || now - t0 > 15000) return rec.stop();
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+}
+
+function stopAll() { if (audio) audio.pause(); if (rec) { rec.onstop = null; rec.stop(); rec = null; } }
+
+async function voiceLoop() {
+  while (started && voice && !S.invoice.contact_paused) {
+    const blob = await listen();
+    if (!started) return;
+    if (!blob) { setStatus("", "Paused. Tap the mic or type to continue"); return; }
+    setStatus("thinking", "Transcribing…");
+    const { text } = await api("/api/stt", blob, blob.type || "audio/webm");
+    if (!text) continue;
+    await turn(text);
+  }
+  if (S.invoice.contact_paused) setStatus("", "Call ended");
+}
+
+// ---------------- conversation ----------------
+async function turn(text) {
+  busy = true;
+  addMsg("client", text);
+  setStatus("thinking", "Thinking…");
+  try {
+    const r = await api("/api/turn", { state: S, text });
+    render(r.state);
+    await speak(r.reply);
+    if (!voice) setStatus("", S.invoice.contact_paused ? "Call ended" : "Your turn");
+  } finally { busy = false; }
+}
+
+$("talk").onclick = async () => {
+  try {
+    if (!started) {
+      started = true;
+      $("talk").textContent = voice ? "🎙️ Tap to speak" : "💬 Call in progress";
+      if (voice) await getMic();
+      setStatus("thinking", "Opening call…");
+      const r = await api("/api/start", { state: S });
+      render(r.state);
+      await speak(r.reply);
+      if (voice) await voiceLoop(); else { setStatus("", "Your turn"); $("text").focus(); }
+    } else if (voice) {
+      if (audio) audio.pause();            // manual interrupt
+      if (!rec && !busy) await voiceLoop();
+    } else $("text").focus();
+  } catch (e) { showError(e); }
+};
+
+$("form").onsubmit = async e => {
+  e.preventDefault();
+  const text = $("text").value.trim();
+  if (!text || busy || !started) return;
+  $("text").value = "";
+  stopAll();
+  try { await turn(text); if (voice) await voiceLoop(); } catch (err) { showError(err); }
+};
+$("chips").onclick = e => {
+  if (e.target.tagName !== "BUTTON") return;
+  if (!started) return $("talk").click();
+  $("text").value = e.target.textContent; $("form").requestSubmit();
+};
+$("reset").onclick = async () => { stopAll(); started = false; render((await api("/api/reset", { mode: S.mode })).state); resetTranscript(); setStatus("", "Ready"); };
+
+// State lives in the browser; the stateless API returns the updated copy each turn.
+api("/api/config")
+  .then(c => { keyConfigured = c.key_configured; return api("/api/reset", { mode: keyConfigured ? "live" : "demo" }); })
+  .then(r => render(r.state)).catch(showError);
+</script>
+</body>
+</html>
